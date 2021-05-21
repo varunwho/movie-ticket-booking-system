@@ -8,6 +8,7 @@ from datetime import time
 from datetime import datetime
 import pyfiglet
 import sys
+import time as t
 accessKey = 'admin@123'
 class Admin(user):
     def modify_location(self):
@@ -44,17 +45,19 @@ class Admin(user):
 
                 city = input('Enter the name of location to be deleted: ')
 
-                #Clearing the city.csv file
-                filename = "city.csv"
-                f = open(filename, "w+")
+                with open('city.csv', 'r') as f:
+                    r = csv.reader(f)
+                    lines = list(r)
+                    while city not in lines[0]:
+                        city = input('Enter the name of location to be deleted: ')
+                    lines[0].remove(city)
                 f.close()
-
-                while city not in self.locations:
-                    city = input('Enter valid city: ')
-                self.locations.remove(city)
-                with open('city.csv', 'a', newline = '') as new_file:
-                    csv_writer = csv.writer(new_file, delimiter = ',')
-                    csv_writer.writerow(self.locations)
+                with open('city.csv','w', newline = '') as f:
+                    writer = csv.writer(f)
+                    writer.writerows(lines)
+                f.close()
+                final = [['City']]
+                add = []
 
                 with open('theaters.csv', 'r') as f:
                     r = csv.reader(f)
@@ -68,6 +71,9 @@ class Admin(user):
                     writer = csv.writer(f)
                     writer.writerows(lines)
                 f.close()
+                self.locations = []
+                final = [['City']]
+                add = []
 
                 print('City deleted Sucessfully! ')
                 choice = input('Want to delete more cities (y/n)?: ')
@@ -113,12 +119,17 @@ class Admin(user):
                     while choice not in ['y','n','yes','no']:
                         choice = input(('Enter valid choice: ')).lower()
 
-                self.locations.append(city)
-
-                with open('city.csv', 'a') as new_file:
-                    csv_writer = csv.writer(new_file, delimiter = ',')
-                    csv_writer.writerow(self.locations)
-                new_file.close()
+                with open('city.csv', 'r') as f:
+                    r = csv.reader(f)
+                    lines = list(r)
+                    while city in lines[0]:
+                        city = input('Enter the name of location to be added: ')
+                    lines[0].append(city)
+                f.close()
+                with open('city.csv','w', newline = '') as f:
+                    writer = csv.writer(f)
+                    writer.writerows(lines)
+                f.close()
 
                 with open('theaters.csv', 'r') as f:
                     r = csv.reader(f)
@@ -130,7 +141,7 @@ class Admin(user):
                     writer = csv.writer(f)
                     writer.writerows(lines)
                 f.close()
-
+                self.locations = []
                 print('City added Sucessfully! ')
                 choice = input('Want to add more cities (y/n)?: ')
                 while choice not in ['y','n','yes','no']:
@@ -167,6 +178,8 @@ class Admin(user):
                 with open('movies.csv', 'r') as read_file:
                     csv_reader = csv.reader(read_file)
                     for line in csv_reader:
+                        if line == []:
+                            continue
                         count += 1
                         movies.append(line[0])
                         add.append(line[0])
@@ -180,12 +193,16 @@ class Admin(user):
 
                 num = count
                 info = []
-                movie = input('Enter the name of the movie to be added: ')
+                movie = input('Enter the name of the movie to be added: ').lower()
                 while movie in movies:
                     movie = input('Enter the name of the movie to be added: ')
                 info.append(movie)
                 clear()
-                rating = input('Enter the rating of the movie: ')
+                rating = input('Enter the rating of the movie (1-100): ')
+                check = list(range(101))
+                check = [str(i) for i in check]
+                while rating not in check:
+                    rating = input('Enter valid rating: ')
                 info.append(rating)
                 clear()
                 genre = input('Enter genre: ')
@@ -199,7 +216,16 @@ class Admin(user):
                 clear()
                 print('Running time: ')
                 hrs = input('Enter hours: ')
+                check = list(range(1, 25))
+                check = [str(i) for i in check]
+                while hrs not in check:
+                    hrs = input('Enter valid hours: ')
+
                 min = input('Enter mins: ')
+                check = list(range(1, 61))
+                check = [str(i) for i in check]
+                while min not in check:
+                    min = input('Enter valid mins: ')
                 run = hrs + 'h ' + min + 'min'
                 info.append(run)
                 clear()
@@ -302,7 +328,10 @@ class Admin(user):
                 print('Existing movies : ')
                 with open('movies.csv', 'r') as read_file:
                     csv_reader = csv.reader(read_file)
+                    csv_reader = list(csv_reader)
                     for line in csv_reader:
+                        if line == []:
+                            continue
                         movies.append(line[0])
                         add.append(line[0])
                         final.append(add)
@@ -317,17 +346,19 @@ class Admin(user):
                 while movie not in movies:
                     movie = input('\nEnter the valid movie name: ').lower()
 
-                with open('movies.csv', 'r') as read_file:
-                    csv_reader = csv.reader(read_file)
-                    with open('movies_edit.csv', 'w') as write_file:
-                        csv_writer = csv.writer(write_file)
-                        for line in csv_reader:
-                            if line[0] != movie:
-                                csv_writer.writerow(line)
-                read_file.close()
-                write_file.close()
-                os.unlink('movies.csv')
-                os.rename('movies_edit.csv','movies.csv')
+                with open('movies.csv', 'r') as f:
+                    r = csv.reader(f)
+                    lines = list(r)
+                    for line in lines:
+                        if line == []:
+                            continue
+                        if line[0] == movie:
+                            lines.remove(line)
+
+                with open('movies.csv','w', newline = '') as f:
+                    writer = csv.writer(f)
+                    writer.writerows(lines)
+                f.close()
 
                 with open('time.csv', 'r') as f:
                     r = csv.reader(f)
@@ -337,7 +368,7 @@ class Admin(user):
                             lines.remove(line)
 
                 f.close()
-                with open('time0.csv','w', newline = '') as f:
+                with open('time.csv','w', newline = '') as f:
                     writer = csv.writer(f)
                     writer.writerows(lines)
                 f.close()
@@ -350,7 +381,7 @@ class Admin(user):
                             lines.remove(line)
 
                 f.close()
-                with open('Date0.csv','w', newline = '') as f:
+                with open('Date.csv','w', newline = '') as f:
                     writer = csv.writer(f)
                     writer.writerows(lines)
                 f.close()
@@ -384,7 +415,10 @@ class Admin(user):
                 movies = []
                 with open('movies.csv', 'r') as read_file:
                     csv_reader = csv.reader(read_file)
+                    csv_reader = list(csv_reader)
                     for line in csv_reader:
+                        if line == []:
+                            continue
                         movies.append(line[0])
                 read_file.close()
 
@@ -429,14 +463,16 @@ class Admin(user):
                 print(Tab.draw())
                 read_file.close()
 
-
                 theater = input('Enter name of theatre to be added: ')
 
                 with open('theaters.csv', 'r') as f:
                     r = csv.reader(f)
                     lines = list(r)
 
-
+                    for line in lines:
+                        while theater in line:
+                            print('Theater already exists ')
+                            theater = input('Enter name of theatre to be added: ')
 
                 for i in lines:
                     for j in i:
@@ -444,8 +480,8 @@ class Admin(user):
                             i.append(theater)
                             break
 
-                # writer = csv.writer(open('theaters.csv', 'w', newline = ''))
-                # writer.writerows(lines)
+                writer = csv.writer(open('theaters.csv', 'w', newline = ''))
+                writer.writerows(lines)
 
                 with open('time.csv', 'r') as f:
                     r = csv.reader(f)
@@ -463,7 +499,7 @@ class Admin(user):
 
 
                 f.close()
-                with open('time0.csv','w', newline = '') as f:
+                with open('time.csv','w', newline = '') as f:
                     writer = csv.writer(f)
                     writer.writerows(lines)
                 f.close()
@@ -483,12 +519,14 @@ class Admin(user):
 
 
                 f.close()
-                with open('Date0.csv','w', newline = '') as f:
+                with open('Date.csv','w', newline = '') as f:
                     writer = csv.writer(f)
                     writer.writerows(lines)
                 f.close()
+                final = [['City']]
+                add = []
                 print('Theater added Sucessfully ')
-                choice = input('Want to delete more Theaters (y/n)?: ')
+                choice = input('Want to add more Theaters (y/n)?: ')
                 while choice not in ['y','n','yes','no']:
                     choice = input(('Enter valid choice: ')).lower()
                 if choice in ['n', 'no']:
@@ -496,10 +534,13 @@ class Admin(user):
 
 
         elif choice == '2':
+
             clear()
             result1= pyfiglet.figlet_format("Delete Theaters".center(40))
             print(result1)
             while True:
+                final = [['City']]
+                add = []
                 with open('city.csv', 'r') as read_file:
                     csv_reader = csv.reader(read_file, delimiter = ',')
                     for line in csv_reader:
@@ -519,7 +560,6 @@ class Admin(user):
                 while city not in self.locations:
                     city = input('Enter supported city ')
 
-                print('Existing Theaters : ')
                 final = [['Theater']]
                 add = []
                 print('Existing Theaters : ')
@@ -563,10 +603,10 @@ class Admin(user):
                             i.remove(theater)
                             break
 
-                # writer = csv.writer(open('theaters.csv', 'w', newline = ''))
-                # writer.writerows(lines)
+                writer = csv.writer(open('theaters.csv', 'w', newline = ''))
+                writer.writerows(lines)
 
-                with open('time0.csv', 'r') as f:
+                with open('time.csv', 'r') as f:
                     r = csv.reader(f)
                     lines = list(r)
 
@@ -578,7 +618,7 @@ class Admin(user):
                             lines.remove(line)
 
                 f.close()
-                with open('time0.csv','w', newline = '') as f:
+                with open('time.csv','w', newline = '') as f:
                     writer = csv.writer(f)
                     writer.writerows(lines)
                 f.close()
@@ -606,6 +646,7 @@ class Admin(user):
                     choice = input(('Enter valid choice: ')).lower()
                 if choice in ['n', 'no']:
                     break
+
 
 
     def Modify_food(self):
@@ -832,7 +873,16 @@ class Admin(user):
                     pre = False
                     mod.append(sub)
                     while pre == False:
-                        item = input('\nEnter item to be added to ' + sub + ' ')
+                        item = input('\nEnter item to be added to ' + sub + ': ')
+                        with open('food.csv', 'r') as read_file:
+
+                            csv_reader = csv.reader(read_file)
+                            lines = list(csv_reader)
+                            for line in lines:
+                                while item in line:
+                                    print('Item already exists ')
+                                    item = input('\nEnter item to be added to ' + sub + ': ')
+
                         mod.append(item)
                         with open('food.csv', 'r') as read_file:
 
@@ -871,7 +921,7 @@ class Admin(user):
                         lines = list(r)
                         lines.append(mod)
                     f.close()
-                    with open('food.csv','a', newline = '') as f:
+                    with open('food.csv','w', newline = '') as f:
                         writer = csv.writer(f)
                         writer.writerows(lines)
                     f.close()
@@ -884,6 +934,7 @@ class Admin(user):
                         break
 
             elif choice == '2':
+
                 clear()
                 result1= pyfiglet.figlet_format("Delete Food".center(40))
                 print(result1)
@@ -927,7 +978,7 @@ class Admin(user):
 
                         for i in lines:
 
-                            if i[0] == sub and i[1] == item:
+                            if i[1] == item:
                                 lines.remove(i)
                                 pre = True
                                 break
@@ -946,37 +997,36 @@ class Admin(user):
                         break
 
     def Modify_date(self):
-        clear()
-        result1= pyfiglet.figlet_format("Edit Date".center(40))
-        print(result1)
-        final = [['City']]
-        add = []
-        with open('city.csv', 'r') as read_file:
-            csv_reader = csv.reader(read_file, delimiter = ',')
-            for line in csv_reader:
-                for i in line:
-                    self.locations.append(i)
-                    add.append(i)
-                    final.append(add)
-                    add = []
+        while True:
+            clear()
+            result1= pyfiglet.figlet_format("Edit Date".center(40))
+            print(result1)
+            final = [['City']]
+            add = []
+            with open('city.csv', 'r') as read_file:
+                csv_reader = csv.reader(read_file, delimiter = ',')
+                for line in csv_reader:
+                    for i in line:
+                        self.locations.append(i)
+                        add.append(i)
+                        final.append(add)
+                        add = []
 
-        read_file.close()
-        Tab = Texttable()
-        Tab.add_rows(final)
-        print(Tab.draw())
-        read_file.close()
+            read_file.close()
+            Tab = Texttable()
+            Tab.add_rows(final)
+            print(Tab.draw())
+            read_file.close()
 
-        city = input('Enter city: ')
-        while city not in self.locations:
-            city = input('Enter supported city: ')
+            city = input('Enter city: ')
+            while city not in self.locations:
+                city = input('Enter supported city: ')
 
 
-        match = False
-        while match == False:
-            print('Existing Theaters : ')
             final = [['Theater']]
             add = []
             print('Existing Theaters : ')
+            theaters = []
             with open('theaters.csv', 'r') as read_file:
                 csv_reader = csv.reader(read_file)
                 for line in csv_reader:
@@ -987,6 +1037,7 @@ class Admin(user):
                         if line[0] == city:
                             if i != 0:
                                 add.append(line[i])
+                                theaters.append(line[i])
                                 final.append(add)
                                 add = []
 
@@ -997,13 +1048,20 @@ class Admin(user):
             read_file.close()
             final = [['Movie']]
             add = []
-            theater = input('Enter name of theatre: ')
+            movies = []
+
+            theater = input('Enter name of theater: ')
+            while theater not in theaters:
+                theater = input('Enter valid theater: ')
             print('Existing movies : ')
             with open('movies.csv', 'r') as read_file:
                 csv_reader = csv.reader(read_file)
                 for line in csv_reader:
+                    if line == []:
+                        continue
                     add.append(line[0])
                     final.append(add)
+                    movies.append(line[0])
                     add = []
 
             read_file.close()
@@ -1013,10 +1071,13 @@ class Admin(user):
             read_file.close()
 
             movie = input('Enter Movie: ')
+            while movie not in movies:
+                movie = input('Enter valid Movie: ')
+
             times = {}
             count = 1
             now = datetime.now().time()
-            with open('Date0.csv', 'r') as read_file:
+            with open('Date.csv', 'r') as read_file:
                 csv_reader = csv.reader(read_file, delimiter = ',')
                 for line in csv_reader:
                     if line[0] == theater and line[1] == movie:
@@ -1033,20 +1094,17 @@ class Admin(user):
                 print('\nDays cannot be zeroes or more than seven\n')
                 change = input('Enter new number of running days : ')
 
-            out = False
-            with open('Date0.csv', 'r') as f:
+            with open('Date.csv', 'r') as f:
                 r = csv.reader(f)
                 lines = list(r)
                 for line in lines:
-                    if out:
-                        break
                     if line[0] == theater and line[1] == movie:
                         for i in range(len(line)):
                             if i not in [0,1]:
                                 line[i] = change
 
             f.close()
-            with open('Date0.csv','w', newline = '') as f:
+            with open('Date.csv','w', newline = '') as f:
                 writer = csv.writer(f)
                 writer.writerows(lines)
             f.close()
@@ -1104,12 +1162,13 @@ class Admin(user):
 
                 match = False
                 while match == False:
-                    print('Existing Theaters : ')
+
                     final = [['Theater']]
                     add = []
                     print('Existing Theaters : ')
                     with open('theaters.csv', 'r') as read_file:
                         csv_reader = csv.reader(read_file)
+                        csv_reader = list(csv_reader)
                         for line in csv_reader:
                             if line == []:
                                 break
@@ -1132,7 +1191,10 @@ class Admin(user):
                     print('Existing movies : ')
                     with open('movies.csv', 'r') as read_file:
                         csv_reader = csv.reader(read_file)
+                        csv_reader = list(csv_reader)
                         for line in csv_reader:
+                            if line == []:
+                                continue
                             add.append(line[0])
                             final.append(add)
                             add = []
@@ -1159,6 +1221,7 @@ class Admin(user):
                                         count += 1
 
                     read_file.close()
+
                 count = 1
                 final = [['ID', 'Time']]
                 add = []
@@ -1175,7 +1238,15 @@ class Admin(user):
 
                 print('Enter Time to be added ')
                 Hours = input('Enter Hours: ')
+                check = list(range(0,24))
+                check = [str(i) for i in check]
+                while Hours not in check:
+                    Hours = input('Enter valid Hours (0-23): ')
+                check = list(range(0,60))
+                check = [str(i) for i in check]
                 min = input('Enter minutes: ')
+                while min not in check:
+                    min = input('Enter valid min (0 - 60): ')
                 time = Hours + ':' + min + ':' + '00'
                 time = datetime.strptime(time,'%H:%M:%S').time()
                 out = False
@@ -1183,6 +1254,7 @@ class Admin(user):
                     r = csv.reader(f)
                     lines = list(r)
                     for line in lines:
+
                         if out:
                             break
                         if line[0] == theater and line[1] == movie:
@@ -1230,7 +1302,7 @@ class Admin(user):
                 city = input('Enter city: ')
                 while city not in self.locations:
                     city = input('Enter supported city: ')
-                print('Existing Theaters : ')
+
                 final = [['Theater']]
                 add = []
                 print('Existing Theaters : ')
@@ -1261,6 +1333,8 @@ class Admin(user):
                     with open('movies.csv', 'r') as read_file:
                         csv_reader = csv.reader(read_file)
                         for line in csv_reader:
+                            if line == []:
+                                continue
                             add.append(line[0])
                             final.append(add)
                             add = []
@@ -1349,7 +1423,13 @@ if __name__ == '__main__':
     print(loged.draw())
 
     while True:
-        choice = int(input('Enter your choice: '))
+        choice = input('Enter your choice: ')
+
+        while choice not in ['1', '2']:
+            choice = input('Enter your choice (1 or 2): ')
+        choice = int(choice)
+
+
         if choice == 2:
             final = [['Press', 'Action'],[1, 'Sign Up'],[2,'Login']]
 
@@ -1357,10 +1437,17 @@ if __name__ == '__main__':
             loged.add_rows(final)
             print(loged.draw())
             while True:
-                choice = int(input('Enter your choice : '))
+                choice = input('Enter your choice : ')
+                while choice not in ['1', '2']:
+                    choice = input('Enter your choice (1 or 2) : ')
+
+                choice = int(choice)
+                clear()
 
                 # Login function
                 if choice == 2:
+                    result1= pyfiglet.figlet_format("Login".center(40))
+                    print(result1)
                     while True:
                         check = False
                         while True:
@@ -1403,6 +1490,8 @@ if __name__ == '__main__':
 
                 # Signup function :
                 if choice == 1:
+                    result1= pyfiglet.figlet_format("Sign Up".center(40))
+                    print(result1)
                     while True:
                         ID = input('Enter your user ID : ')
                         flag = False
@@ -1447,8 +1536,8 @@ if __name__ == '__main__':
                     print('Enter valid choice: ')
                     continue
 
-
             use = user()
+            clear()
             use.select_location()
             clear()
             use.select_movies_time()
@@ -1466,6 +1555,7 @@ if __name__ == '__main__':
                 choice = use.select_time()
             clear()
             use.select_seats()
+            t.sleep(5)
             use.food_menu()
 
             use.payment()

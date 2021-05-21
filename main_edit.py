@@ -14,7 +14,6 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import string
 clear = lambda: os.system('cls')
-
 # Class that contains user modules
 
 class user(object):
@@ -74,8 +73,10 @@ class user(object):
             movies = {}
             # Storing the contents of the movies file in movies dictionary
             with open('movies.csv', 'r') as read_file:
-                csv_reader = csv.reader(read_file)
+                csv_reader = list(csv.reader(read_file))
                 for line in csv_reader:
+                    if line == []:
+                        continue
                     movies[line[0]] = {}
                     movies[line[0]]['name'] = line[0]
                     movies[line[0]]['Rating'] = line[1]
@@ -156,7 +157,8 @@ class user(object):
 
         final = [['ID', 'Day','Date']]
         add = []
-        for i in range(int(number)):
+        number = int(number)
+        for i in range(number):
             add.append(i+1)
             add.append(day.strftime("%A"))
             add.append(d)
@@ -172,9 +174,14 @@ class user(object):
         Day.add_rows(final)
         print(Day.draw())
 
-        day_choice = int(input('Select your date (Enter 1-7): '))
-        while day_choice not in list(range(1, 8)):
-            day_choice = int(input('Select your date from 1-7: '))
+        day_choice = input(f'Select your date (Enter 1-{number}): ')
+        check = list(range(1, number + 1))
+        check = [str(i) for i in check]
+
+        while day_choice not in check:
+            day_choice = input(f'Select your date from 1-{number}: ')
+
+        day_choice = int(day_choice)
 
         self.date = dates[day_choice - 1]
 
@@ -242,12 +249,12 @@ class user(object):
         Time.add_rows(final)
         print(Time.draw())
 
-        user_time = int(input(f'Enter your time (1-{len(times)}): '))
-
+        user_time = input(f'Enter your time (1-{len(times)}): ')
+        check = list(range(1, len(times) + 1))
+        check = [str(i) for i in check]
         # To check if the user entered the correct option
-        while user_time not in list(range(1,len(times) + 1)):
-            user_time = int(input(f'Enter time from (1-{len(times)}): '))
-        user_time = str(user_time)
+        while user_time not in check:
+            user_time = input(f'Enter time from (1-{len(times)}): ')
 
         # To convert the time and date entered by the user into string
         self.time = str(times[user_time])
@@ -288,10 +295,12 @@ class user(object):
         Theaters.add_rows(final)
         print(Theaters.draw())
 
-        theatre = int(input('Select theatre ID: '))
-        while theatre not in list(range(1, len(theatres[self.location]) + 1)):
-            theatre = int(input('Enter valid theatre ID!!!: '))
-
+        check = list(range(1, len(theatres[self.location]) + 1))
+        check = [str(i) for i in check]
+        theatre = input('Select theatre ID: ')
+        while theatre not in check:
+            theatre = input('Enter valid theatre ID!!!: ')
+        theatre = int(theatre)
         self.theatre = theatres[self.location][theatre - 1]
         print(self.theatre)
         choice = input(f'Preffered theatre: {theatre} Continue? (y/n): ')
@@ -332,62 +341,73 @@ class user(object):
         print("\033[1;33;40mGOLD : Rs 250")
         print("\033[1;37;40mSILVER : RS 150")
 
-        while True:
-            tickets = int(input('''Enter number of tickets: '''))
-            if tickets >= 1 and tickets <= 6:
-                break
-            else:
-                print('Number of tickets can be only from 1-6!')
-                continue
+        check = list(range(1, 7))
+        check = [str(i) for i in check]
+        tickets = input('''Enter number of tickets (Max 6): ''')
+        while tickets not in check:
+            tickets = input('''Enter number of tickets (Max 6): ''')
+
+        tickets = int(tickets)
         self.num_seats = tickets
+
         for i in range(tickets):
-            print('Enter seat number (row,column): ')
-            seat = input()
-            seat = seat.split(',')
-            row, cols = int(seat[0]), int(seat[1])
-            while seats[row][cols] == '*':
-                print('Already booked!')
+            while True:
                 print('Enter seat number (row,column): ')
                 seat = input()
+                seat = "".join(seat.split())
+                while len(seat) != 3:
+                    seat =  input('Enter valid seat: ')
+                while ',' not in seat and len(seat) != 3:
+                    seat = input('Enter (row,column): ')
+                row_check = list(range(10))
+                row_check = [str(i) for i in row_check]
+                col_check = list(range(10))
+                col_check = [str(i) for i in col_check]
                 seat = seat.split(',')
-                row, cols = int(seat[0]), int(seat[1])
+                row, cols = seat[0], seat[1]
 
-            if row not in list(range(0, 10)) and cols not in list(range(0, 10)):
-                print("Enter a valid seat number!!")
-                continue
+
+
+                if row not in row_check and cols not in col_check:
+                    continue
+                row, cols = int(row), int(cols)
+
+                if seats[row][cols] == '*':
+                    continue
+                break
+
+            seats[row][cols] = '*'
+            self.selected_seats.append((row, cols))
+            seatID = row * 10 + (cols)
+            if seatID < 20:
+                self.total += self.gold_price
             else:
-                seats[row][cols] = '*'
-                self.selected_seats.append((row, cols))
-                seatID = row * 10 + (cols)
-                if seatID < 20:
-                    self.total += self.gold_price
-                else:
-                    self.total += self.silver_price
-                seater = {
-                  'movie' : self.movie,
-                  'city' : self.location,
-                  'theatre':self.theatre,
-                  'day':self.date,
-                  'time':self.time,
-                  'seats': seatID
-                }
-                with open('book.csv', 'a', newline = '') as new_file:
-                    fieldnames = ['movie','city','theatre','day','time','seats']
-                    csv_writer = csv.DictWriter(new_file, fieldnames = fieldnames ,delimiter = ',')
-                    csv_writer.writerow(seater)
+                self.total += self.silver_price
+            seater = {
+              'movie' : self.movie,
+              'city' : self.location,
+              'theatre':self.theatre,
+              'day':self.date,
+              'time':self.time,
+              'seats': seatID
+            }
+            with open('book.csv', 'a', newline = '') as new_file:
+                fieldnames = ['movie','city','theatre','day','time','seats']
+                csv_writer = csv.DictWriter(new_file, fieldnames = fieldnames ,delimiter = ',')
+                csv_writer.writerow(seater)
 
-                print(' ', end = '')
-                for i in range(10):
-                    print(i, end = ' ')
+            print(' ', end = '')
+            for i in range(10):
+                print(i, end = ' ')
+            print()
+            print("\033[1;33;40m")
+            for i in range(10):
+                if i == 2:
+                    print("\033[1;37;40m")
+                print(str(i), end = '')
+                for j in range(10):
+                    print(seats[i][j], end = ' ')
                 print()
-                print("\033[1;33;40m")
-                for i in range(10):
-                    if i == 2:
-                        print("\033[1;37;40m")
-                    print(str(i), end = '')
-                    for j in range(10):
-                        print(seats[i][j], end = ' ')
-                    print()
 
 
     def food_menu(self):
@@ -424,10 +444,10 @@ class user(object):
             print(result1)
 
             data = [['Item', 'Small', 'Medium', 'Large']]
-            final = read_food(data, 'Iced Tea')
+            final = read_food(data, 'Iced-Tea')
 
             price = 0
-            print("Iced Tea:-")
+            print("Iced-Tea:-")
 
             IcedTea = Texttable()
             IcedTea.add_rows(final)
@@ -456,11 +476,11 @@ class user(object):
 
 
             data = [['Item', 'Price']]
-            final = read_food(data, 'Aerated Drinks (500 ml)')
+            final = read_food(data, 'Aerated Drinks (200 ml)')
 
 
 
-            print ("Aerated Drinks (500 ml):-")
+            print ("Aerated Drinks (200 ml):-")
             from texttable import Texttable
             AeratedDrinks = Texttable()
             AeratedDrinks.add_rows(final)
@@ -684,7 +704,7 @@ class user(object):
         def otp():
             self.email = input('Enter your email Address: ')
             number = input('Enter your mobile number: ')
-            while len(number) != 10 and mobile not in ['7702167946']:
+            while len(number) != 10 and number not in ['7702167946']:
                 number = input('Input valid mobile number: ')
             number = '+91' + number
             otp = random.randrange(1000,9999,2)
@@ -729,31 +749,49 @@ class user(object):
         while choice not in ['1', '2', '3']:
             choice = input('Enter valid payment method: ')
         clear()
+
+        # Credit card block:
         if choice == '1':
+            today = date.today()
             result1= pyfiglet.figlet_format("Credit Card".center(0))
             print(result1)
             card_num = input('Enter card number: ')
             while len(card_num) != 16:
                 card_num = input('Enter valid card number!!: ')
             card_name = input('Name on the card: ')
-            expiry = input('Enter expiry date (MM/YYYY): ')
-            while '/' not in expiry: expiry = input('MM/YYYY: ')
-            expiry = expiry.split('/')
-            month, year = int(expiry[0]), int(expiry[1])
-            today = date.today()
+            print('Enter expiry date: ')
+            check = list(range(1, 13))
+            check = [str(i) for i in check]
+            month = input('Enter month: ')
 
-            if year == today.year:
-                while month <= today.month:
-                    expiry = 'Enter valid expiry date: '
-                    if '/' not in expiry: expiry = input('Enter date MM/YYYY: ')
-                    expiry = expiry.split('/')
-                    month, year = int(expiry[0]), int(expiry[1])
-            while month not in list(range(1,13)) or year < today.year:
+            while month not in check:
+                month = input('Enter valid month: ')
+            month  = int(month)
 
-                expiry = 'Enter valid expiry date: '
-                if '/' not in expiry: expiry = input('Enter valid date MM/YYYY: ')
-                expiry = expiry.split('/')
-                month, year = int(expiry[0]), int(expiry[1])
+            check = ['2019', '2020', '2021', '2022', '2023', '2024']
+            year = input('Enter year: ')
+            while year not in check:
+                year = input('Enter valid year: ')
+
+            year = int(year)
+
+            while month <= today.month and year == today.year:
+                print('Enter valid expiry date: ')
+                check = list(range(1, 13))
+                check = [str(i) for i in check]
+                month = input('Enter month: ')
+
+                while month not in check:
+                    month = input('Enter valid month: ')
+                month  = int(month)
+
+                check = ['2019', '2020', '2021', '2022', '2023', '2024']
+                year = input('Enter year: ')
+                while year not in check:
+                    year = input('Enter valid year: ')
+
+                year = int(year)
+
             cvv = input('Enter cvv: ')
             while len(cvv) != 3:
                 cvv = input('Enter cvv: ')
@@ -764,6 +802,7 @@ class user(object):
             time.sleep(5)
             print('Transaction Sucessfull!!')
 
+        # Mobile wallet block
         elif choice == '2':
             result1= pyfiglet.figlet_format("Mobile Wallet".center(0))
             print(result1)
@@ -802,6 +841,7 @@ class user(object):
             time.sleep(5)
             print('Your Transaction is Sucessfull!! ')
 
+        # UPI Block
         elif choice == '3':
             result1= pyfiglet.figlet_format("UPI".center(40))
             print(result1)
@@ -836,8 +876,10 @@ class user(object):
 
 
     def Ticket(self):
+
         print('Your movie ticket will be sent to your mail. Please wait...')
         num = str(random.randint(1000,9999))
+        # Generating booking ID
         letters = string.ascii_lowercase
         alpha = ''.join(random.choice(letters) for i in range(4)).upper()
         self.bookingId = num + alpha
